@@ -1,4 +1,4 @@
-vcd_parser
+VCD Parser
 ==========
 
 
