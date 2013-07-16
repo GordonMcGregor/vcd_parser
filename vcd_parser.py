@@ -34,6 +34,7 @@ from itertools import dropwhile, takewhile, izip
 from collections import defaultdict
 import sys
 
+from watcher import VcdWatcher
 
 class VCD(object):
   ''' A parser object for VCD files.  Reads definitions and walks through the value changes'''
@@ -61,9 +62,31 @@ class VCD(object):
     self.keyword_dispatch = defaultdict(self.parse_error, keyword_functions)
  
     self.scope = []
+    self.now = 0
     self.idcode2references = defaultdict(list)
     self.xmr_cache = dict()
     self.end_of_definitions = False
+    self.changes = {}
+    self.watchers = []
+
+
+  def get_id(self, xmr):
+    search_path = xmr.split('.')
+
+    for id in self.idcode2references:
+      (var_type, size, reference) = self.idcode2references[id][0]
+      match = True  
+      for depth, node in enumerate(search_path):
+        var_type, name = reference[depth]
+        if node == name:
+          continue
+        else:
+          match = False
+          break
+      if match:
+        return id
+
+    raise ValueError('No match for ', xmr)
 
 
   def get_xmr(self, id):
@@ -77,20 +100,39 @@ class VCD(object):
 
 
   def scaler_value_change(self, value, id):
-    path = self.get_xmr(id)
-    return
-    if value in '01' :
-      print 'S: ', value, path
-
-    # TODO magic goes here for callback and sampling ?
+    self.changes[id] = value
 
 
   def vector_value_change(self, format, number, id):
-    path = self.get_xmr(id)
-    return
-    print 'V: ', format, number, path
+    self.changes[id] = (format, number)
 
-    # TODO magic goes here for callback and sampling ?
+
+  def register_watcher(self, watcher):
+    self.watchers.append(watcher)
+
+
+  def deregister_watcher(self, watcher):
+    self.watchers.remove(watcher)
+
+
+  def update_time(self, next_time):
+    current_time = self.now
+
+    for watcher in self.watchers:
+      update_needed = False
+      for signal in watcher._sensitive_ids:
+        if signal in self.changes:
+          update_needed = True
+
+      collected_changes = {}
+      for signal in watcher._watching_ids:
+        if signal in self.changes:
+          collected_changes[signal] = self.changes[signal]
+
+      watcher.update(collected_changes)
+
+    self.changes = {}
+    self.now = next_time
 
 
   def parse(self, fh):
@@ -108,7 +150,7 @@ class VCD(object):
           # skip $dump* tokens and $end tokens in sim section
           continue
         elif c == '#':
-          self.now = rest
+          self.update_time(rest)
         elif c in '01xXzZ':
           self.scaler_value_change(value=c, id=rest)
         elif c in 'bBrR':
@@ -134,7 +176,10 @@ class VCD(object):
     self.end_of_definitions = True
     self.drop_declaration(tokeniser, keyword)
     
+    for watcher in self.watchers:
+      watcher.update_ids(self)
     
+
   def vcd_scope(self, tokeniser, keyword):
     self.scope.append( tuple(takewhile(lambda x: x != "$end", tokeniser)))
     
@@ -172,14 +217,17 @@ class VCD(object):
       parse_error(tokeniser, keyword)
 
 
-  def show_stats(self):
-    for signal in sorted(self.xmr_cache.values()):
-      print signal
-
 
 if __name__ == '__main__':
 
   vcd = VCD()
+
+  watcher = VcdWatcher()
+  watcher.set_hierarchy('top.t1')
+  watcher.add_sensitive('clk')
+  watcher.add_watching('read')
+
+  vcd.register_watcher(watcher)
+
   with open(sys.argv[1]) as vcd_file:
     vcd.parse(vcd_file)
-    vcd.show_stats()
