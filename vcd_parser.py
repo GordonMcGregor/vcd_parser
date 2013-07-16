@@ -34,7 +34,7 @@ from itertools import dropwhile, takewhile, izip
 from collections import defaultdict
 import sys
 
-from watcher import VcdWatcher
+from vcd_watcher import VcdWatcher, VcdTracker
 
 class VCD(object):
   ''' A parser object for VCD files.  Reads definitions and walks through the value changes'''
@@ -68,7 +68,7 @@ class VCD(object):
     self.end_of_definitions = False
     self.changes = {}
     self.watchers = []
-
+    self.debug = True
 
   def get_id(self, xmr):
     search_path = xmr.split('.')
@@ -87,6 +87,11 @@ class VCD(object):
         return id
 
     raise ValueError('No match for ', xmr)
+
+
+  def show_nets(self):
+    for id in self.idcode2references:
+      print self.get_xmr(id)
 
 
   def get_xmr(self, id):
@@ -118,18 +123,24 @@ class VCD(object):
   def update_time(self, next_time):
     current_time = self.now
 
+    if self.debug: 
+      print "Current time is ", self.now, 'changing to ', next_time
+      for change in self.changes:
+        print self.get_xmr(change), self.changes[change]
+
     for watcher in self.watchers:
       update_needed = False
       for signal in watcher._sensitive_ids:
         if signal in self.changes:
           update_needed = True
 
-      collected_changes = {}
-      for signal in watcher._watching_ids:
-        if signal in self.changes:
-          collected_changes[signal] = self.changes[signal]
+      if update_needed:
+        collected_changes = {}
+        for signal in watcher._watching_ids:
+          if signal in self.changes:
+            collected_changes[signal] = self.changes[signal]
 
-      watcher.update(collected_changes)
+        watcher.update(collected_changes, vcd)
 
     self.changes = {}
     self.now = next_time
@@ -223,11 +234,17 @@ if __name__ == '__main__':
   vcd = VCD()
 
   watcher = VcdWatcher()
-  watcher.set_hierarchy('top.t1')
-  watcher.add_sensitive('clk')
-  watcher.add_watching('read')
+  watcher.set_hierarchy('top.m1')
+  watcher.add_sensitive('net3')
+  watcher.add_watching('net2')
+
+  watcher.set_tracker(VcdTracker)
 
   vcd.register_watcher(watcher)
 
   with open(sys.argv[1]) as vcd_file:
-    vcd.parse(vcd_file)
+    try:
+      vcd.parse(vcd_file)
+    except ValueError as e:
+      print e
+      vcd.show_nets()
