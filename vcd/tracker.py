@@ -40,6 +40,6 @@ class VcdTracker(object):
         self.parser = parser
         self.finished = False
 
-	def update(self, changes):
+	def update(self, activity, values):
 		pass
 

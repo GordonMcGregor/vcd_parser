@@ -70,6 +70,9 @@ class VcdParser(object):
     self.watchers = []
     self.debug = False
 
+    self.watched_changes = {}
+
+
   def get_id(self, xmr):
     '''Given a Cross Module Reference (XMR) find the associated VCD ID string'''
     search_path = xmr.split('.')
@@ -138,31 +141,37 @@ class VcdParser(object):
       for change in self.changes:
         print self.get_xmr(change), self.changes[change]
 
+    # Check sensitivity lists to see if a watcher needs to be notified of changes
     for watcher in self.watchers:
       update_needed = False
-      for signal in watcher.get_sensitive_ids():
-        if signal in self.changes:
+      activity = {}
+      for id in watcher.get_sensitive_ids():
+        if id in self.changes:
           update_needed = True
+          activity[id] = self.changes[id]
 
       if update_needed:
         collected_changes = {}
-        for signal in watcher.get_watching_ids():
-          if signal in self.changes:
-            collected_changes[signal] = self.changes[signal]
+        for id in watcher.get_watching_ids():
+          collected_changes[id] = self.watched_changes[id]
 
-        watcher.pre_update(collected_changes)
+        watcher.notify(activity, collected_changes)
 
+    self.update_watched_changes()
     self.changes = {}
     self.now = next_time
 
 
+  def update_watched_changes(self):
+    '''Watched changes is a persistent store of changes to the list of signals considered by all watchers. Here it is updated 
+       after any watcher updates from update_time, to store the 'new' values'''
+    for id in self.watched_changes:
+      if id in self.changes:
+        self.watched_changes[id] = self.changes[id]
+
   def parse(self, file_handle):
     '''Wrapper around the main extract routine - catch errors (mainly unknown XMRs or signals)'''
-    try:
-      self.extract(file_handle)
-    except ValueError as e:
-      print e
-      self.show_nets()
+    self.extract(file_handle)
 
 
   def extract(self, fh):
@@ -209,6 +218,8 @@ class VcdParser(object):
     
     for watcher in self.watchers:
       watcher.update_ids()
+      for id in watcher.get_watching_ids():
+        self.watched_changes[id] = 'x'
     
 
   def vcd_scope(self, tokeniser, keyword):

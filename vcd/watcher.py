@@ -46,9 +46,13 @@ class VcdWatcher(object):
 	tracker = None
 	parser = None
 
-	def pre_update(self, changes):
+	values = None
+	activity = None
+
+	def notify(self, activity, values):
 		'''Manage internal data updates prior to calling the expected to be overridden update method'''
-		self.changes = changes
+		self.values = values
+		self.activity = activity
 		self.update()
 
 	def update(self):
@@ -62,7 +66,7 @@ class VcdWatcher(object):
 			self.trackers.append(self.create_new_tracker())
 
 		for tracker in self.trackers:
-			tracker.update(self.changes)
+			tracker.update(self.activity, self.values)
 
 		for tracker in self.trackers:
 			if tracker.finished:
@@ -129,8 +133,18 @@ class VcdWatcher(object):
 	def get2val(self, signal):
 		'''Attempt to convert a scalar to a numerical 0/1 value'''
 		id = self.get_id(signal)
-		if id in self.changes:
-			value = self.changes[id]
+		if id in self.values:
+			value = self.values[id]
+			if value in "xXzZ":
+				raise ValueError
+			return eval(value)
+
+
+	def get_active_2val(self, signal):
+		'''Attempt to convert a scalar to a numerical 0/1 value'''
+		id = self.get_id(signal)
+		if id in self.activity:
+			value = self.activity[id]
 			if value in "xXzZ":
 				raise ValueError
 			return eval(value)
