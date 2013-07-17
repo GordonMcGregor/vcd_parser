@@ -1,7 +1,6 @@
-from vcd_parser import VcdParser
-from vcd_watcher import VcdWatcher, VcdTracker
+from vcd import *
 
-class UbusWatcher(VcdWatcher):
+class UbusWatcher(watcher.VcdWatcher):
 
 	in_reset = False
 	signals = ('sig_request', 'sig_grant', 'sig_addr', 'sig_size', 
@@ -43,7 +42,7 @@ class UbusWatcher(VcdWatcher):
 			print '\t', vcd.get_xmr(change), changes[change]
 
 
-vcd = VcdParser()
+vcd = parser.VcdParser()
 
 watcher = UbusWatcher('ubus_tb_top.vif')
 vcd.register_watcher(watcher)
