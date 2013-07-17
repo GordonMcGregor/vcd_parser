@@ -36,7 +36,7 @@ import sys
 
 from vcd_watcher import VcdWatcher, VcdTracker
 
-class VCD(object):
+class VcdParser(object):
   ''' A parser object for VCD files.  Reads definitions and walks through the value changes'''
      
   def __init__(self):
@@ -68,7 +68,7 @@ class VCD(object):
     self.end_of_definitions = False
     self.changes = {}
     self.watchers = []
-    self.debug = True
+    self.debug = False
 
   def get_id(self, xmr):
     search_path = xmr.split('.')
@@ -130,29 +130,37 @@ class VCD(object):
 
     for watcher in self.watchers:
       update_needed = False
-      for signal in watcher._sensitive_ids:
+      for signal in watcher.get_sensitive_ids():
         if signal in self.changes:
           update_needed = True
 
       if update_needed:
         collected_changes = {}
-        for signal in watcher._watching_ids:
+        for signal in watcher.get_watching_ids():
           if signal in self.changes:
             collected_changes[signal] = self.changes[signal]
 
-        watcher.update(collected_changes, vcd)
+        watcher.update(collected_changes, self)
 
     self.changes = {}
     self.now = next_time
 
 
-  def parse(self, fh):
+  def parse(self, file_handle):
+    try:
+      self.extract(file_handle)
+    except ValueError as e:
+      print e
+      self.show_nets()
+
+
+  def extract(self, fh):
     # open the VCD file and create a token generator
     tokeniser = (word for line in fh for word in line.split() if word)
 
     for count, token in enumerate(tokeniser):
       # parse VCD until the end of definitions
-      if not vcd.end_of_definitions:
+      if not self.end_of_definitions:
         self.keyword_dispatch[token](tokeniser, token)
       else:
         # Working through changes
@@ -179,7 +187,7 @@ class VCD(object):
 
 
   def save_declaration(self, tokeniser, keyword):
-    vcd.__setattr__(keyword.lstrip('$'),
+    self.__setattr__(keyword.lstrip('$'),
                     " ".join( takewhile(lambda x: x != "$end", tokeniser)) )
 
 
@@ -203,7 +211,7 @@ class VCD(object):
   def vcd_var(self, tokeniser, keyword):
     data = tuple(takewhile(lambda x: x != "$end", tokeniser))
     (var_type, size, identifier_code, reference) = data[:4] # ignore range on identifier ( TODO  Fix this )
-    reference = vcd.scope + [('var', reference)]
+    reference = self.scope + [('var', reference)]
     self.idcode2references[identifier_code].append( (var_type, size, reference))
     
     
@@ -231,7 +239,7 @@ class VCD(object):
 
 if __name__ == '__main__':
 
-  vcd = VCD()
+  vcd = VcdParser()
 
   watcher = VcdWatcher()
   watcher.set_hierarchy('top.m1')
@@ -243,8 +251,4 @@ if __name__ == '__main__':
   vcd.register_watcher(watcher)
 
   with open(sys.argv[1]) as vcd_file:
-    try:
-      vcd.parse(vcd_file)
-    except ValueError as e:
-      print e
-      vcd.show_nets()
+    vcd.parse(vcd_file)

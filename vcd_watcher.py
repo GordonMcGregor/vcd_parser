@@ -45,6 +45,10 @@ class VcdWatcher(object):
 	tracker = None
 
 	def update(self, changes, vcd):
+		self.manage_trackers(changes, vcd)
+
+
+	def manage_trackers(self, changes, vcd):
 		if self.start_tracker(changes, vcd):
 			self.trackers.append(self.create_new_tracker(changes, vcd))
 
@@ -65,8 +69,8 @@ class VcdWatcher(object):
 
 
 	def update_ids(self, vcd):
-		self._sensitive_ids = [vcd.get_id(xmr) for xmr in self.sensitive]
-		self._watching_ids = [vcd.get_id(xmr) for xmr in self.watching]
+		self._sensitive_ids = {xmr : vcd.get_id(xmr) for xmr in self.sensitive}
+		self._watching_ids = {xmr : vcd.get_id(xmr) for xmr in self.watching}
 
 
 	def set_hierarchy(self, hierarchy):
@@ -84,6 +88,20 @@ class VcdWatcher(object):
 		if not hierarchy:
 			hierarchy = self.default_hierarchy
 		self.watching.append(hierarchy + '.' + signal)
+
+
+	def get_sensitive_ids(self):
+		return self._sensitive_ids.values()
+
+
+	def get_watching_ids(self):
+		return self._watching_ids.values()
+
+
+	def get_id(self, signal, hierarchy=None):
+		if not hierarchy:
+			hierarchy = self.default_hierarchy
+		return self._watching_ids[hierarchy + '.' + signal]
 
 
 	def set_tracker(self, tracker):
