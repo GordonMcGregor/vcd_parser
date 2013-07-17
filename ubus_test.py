@@ -75,8 +75,14 @@ class UbusWatcher(watcher.VcdWatcher):
 
 class UbusTracker(tracker.VcdTracker):
 
+	edge_count = 0
+
 	def update(self, changes):
-		print '+', '-'*40, '+'
+
+		self.edge_count+=1
+		print '+', '-' * 80, '+'
+		print '+', '-'*29, 'clock posedge # %4d' % self.edge_count, '-'*29, '+'
+		print '+', '-' * 80, '+'
 		for change in changes:
 			print '\t', self.parser.get_xmr(change), changes[change]
 
