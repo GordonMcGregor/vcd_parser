@@ -63,6 +63,7 @@ class VcdParser(object):
  
     self.scope = []
     self.now = 0
+    self.then = 0
     self.idcode2references = defaultdict(list)
     self.xmr_cache = dict()
     self.end_of_definitions = False
@@ -159,6 +160,7 @@ class VcdParser(object):
 
     self.update_watched_changes()
     self.changes = {}
+    self.then = current_time
     self.now = next_time
 
 

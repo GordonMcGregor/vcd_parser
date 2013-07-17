@@ -69,21 +69,51 @@ class UbusWatcher(watcher.VcdWatcher):
 
 
 	def start_tracker(self):
-		# Simple example - if we don't have a tracker, add one first time it is called
+		# Simple example - if we don't have an active tracker, start one
 		if not len(self.trackers):
+			print '+','-'*40,'+'
 			return True
 
 
 class UbusTracker(tracker.VcdTracker):
 
-	edge_count = 0
 
-	def update(self, activity, values):
+	skip = False
+	def start(self):
+		self.states = {'IDLE': self.idle_state, 'START':self.start_state, 'READ': self.data_state, 'WRITE':self.data_state}
+		self.state = self.states['IDLE']
 
-		self.edge_count+=1
-		print '+', '-' * 80, '+'
-		print '+', '-'*29, 'clock posedge # %4d' % self.edge_count, '-'*29, '+'
-		super(UbusTracker, self).update(activity, values)
+
+	def update(self):
+		self.state()
+
+
+	def idle_state(self):
+		if eval(self.sig_start):
+			if not self.skip: print 'START @', self.parser.now
+			self.state = self.states['START']
+
+
+	def start_state(self):
+		if eval(self.sig_write) == 1:
+			print 'WRITE addr: 0x%x' % v2d(self.sig_addr)
+			self.state = self.states['WRITE']
+			return
+
+		if eval(self.sig_read) == 1:
+			print 'READ addr: 0x%x' % v2d(self.sig_addr)
+			self.state = self.states['READ']
+			return
+
+		self.skip = True
+		self.state = self.states['IDLE']
+
+
+	def data_state(self):
+		if eval(self.sig_wait):
+			return
+		print '     DATA: 0x%x' % v2d(self.sig_data)
+		self.finished = True
 
 
 

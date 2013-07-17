@@ -18,4 +18,14 @@
 
 '''
 
-__all__ = ['parser', 'watcher', 'tracker']
+__all__ = ['parser', 'watcher', 'tracker', 'v2d']
+
+def v2d(value):
+
+   format, data = value
+   if format == 'b':
+      return eval('0b' + data)
+   if format == 'h':
+      return eval ('0x' + data)
+   return eval(data)
+   

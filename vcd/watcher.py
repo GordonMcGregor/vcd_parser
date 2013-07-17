@@ -66,7 +66,7 @@ class VcdWatcher(object):
 			self.trackers.append(self.create_new_tracker())
 
 		for tracker in self.trackers:
-			tracker.update(self.activity, self.values)
+			tracker.notify(self.activity, self.values)
 
 		for tracker in self.trackers:
 			if tracker.finished:
@@ -80,7 +80,7 @@ class VcdWatcher(object):
 
 	def create_new_tracker(self):
 		'''Build an instance of the pre-defined transaction tracker objects'''
-		return self.tracker(self.parser)
+		return self.tracker(self.parser, self)
 
 
 	def update_ids(self):
@@ -127,7 +127,27 @@ class VcdWatcher(object):
 		'''Look up the signal id from a signal name and optional path'''
 		if not hierarchy:
 			hierarchy = self.default_hierarchy
-		return self._watching_ids[hierarchy + '.' + signal]
+
+		if not hierarchy:
+			return None
+
+		xmr = hierarchy + '.' + signal
+		if xmr in self._watching_ids:
+			return self._watching_ids[xmr]
+		else:
+			return None
+
+
+	def __getattribute__(self, name):
+
+		if name in ['get_id', 'default_hierarchy', '_watching_ids']:
+			return object.__getattribute__(self, name)
+
+		id = self.get_id(name)
+		if id:
+			return self.values[id]
+		else:
+			return object.__getattribute__(self, name)
 
 
 	def get2val(self, signal):

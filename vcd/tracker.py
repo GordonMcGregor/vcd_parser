@@ -35,21 +35,56 @@ finished their transaction recording.c
 class VcdTracker(object):
     '''A transaction tracker base class. Most of this will be very custom depending on the protocols'''
 
-    def __init__(self, parser):
+    activity = None
+    values = None
+    trigger_count = 0
+
+    def __init__(self, parser, watcher):
         self.parser = parser
+        self.watcher = watcher
         self.finished = False
+        self.start()
 
-    def update(self, activity, values):
+    def start(self):
+        pass
 
+
+    def __getattribute__(self, name):
+
+        if name == 'watcher':
+            return object.__getattribute__(self, name)
+
+        id = self.watcher.get_id(name) 
+        if id:
+            return self.values[id]
+        else:
+            return object.__getattribute__(self, name)
+
+
+    def notify(self, activity, values):
+        self.trigger_count+=1
+        self.activity = activity
+        self.values = values
+        self.update()
+
+
+    def update(self):
+        pass
+
+
+    def display(self):
+
+        print '+', '-' * 80, '+'
+        print '+', '-'*29, 'clock posedge # %4d (%s:%s)' % (self.trigger_count, self.parser.then, self.parser.now)
         print '+', '-' * 80, '+'
         print 'Triggered change'
 
-        for id in activity:
-            print '\t', self.parser.get_xmr(id), activity[id]
+        for id in self.activity:
+            print '\t', self.parser.get_xmr(id), self.activity[id]
 
 
         print '+', '-' * 80, '+'
         print 'Previous values'
 
-        for id in values:
-            print '\t', self.parser.get_xmr(id), values[id]
+        for id in self.values:
+            print '\t', self.parser.get_xmr(id), self.values[id]
