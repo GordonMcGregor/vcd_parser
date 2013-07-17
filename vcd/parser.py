@@ -34,7 +34,7 @@ from itertools import dropwhile, takewhile, izip
 from collections import defaultdict
 import sys
 
-from watcher import VcdWatcher, VcdTracker
+from watcher import VcdWatcher
 
 class VcdParser(object):
   ''' A parser object for VCD files.  Reads definitions and walks through the value changes'''

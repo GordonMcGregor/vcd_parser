@@ -30,9 +30,14 @@ then updates all the currently active trackers, until they indicate that they ha
 finished their transaction recording.c
 
 '''
-class VcdTracker(object):
 
-	finished = False
+
+class VcdTracker(object):
+    '''A transaction tracker base class. Most of this will be very custom depending on the protocols'''
+
+
+    def __init__(self):
+        self.finished = False
 
 	def update(self, changes, vcd):
 		pass

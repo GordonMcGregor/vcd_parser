@@ -33,6 +33,7 @@ finished their transaction recording.c
 
 
 class VcdWatcher(object):
+	'''Base class for watcher objects'''
 
 	sensitive = []
 	watching = []
@@ -45,10 +46,12 @@ class VcdWatcher(object):
 	tracker = None
 
 	def update(self, changes, vcd):
+		'''Override update to only check on rising/ falling edges etc, prior to calling manage trackers'''
 		self.manage_trackers(changes, vcd)
 
 
 	def manage_trackers(self, changes, vcd):
+		'''Start new trackers, update existing trackers and clean up finished tracker objects'''
 		if self.start_tracker(changes, vcd):
 			self.trackers.append(self.create_new_tracker(changes, vcd))
 
@@ -61,23 +64,28 @@ class VcdWatcher(object):
 
 
 	def start_tracker(self, changes, vcd):
+		'''Override start_tracker to identify start of transaction conditions'''
 		return False
 
 
 	def create_new_tracker(self, changes, vcd):
+		'''Build an instance of the pre-defined transaction tracker objects'''
 		return self.tracker()
 
 
 	def update_ids(self, vcd):
+		'''Callback after VCD header is parsed, to extract signal ids'''
 		self._sensitive_ids = {xmr : vcd.get_id(xmr) for xmr in self.sensitive}
 		self._watching_ids = {xmr : vcd.get_id(xmr) for xmr in self.watching}
 
 
 	def set_hierarchy(self, hierarchy):
+		'''Set the prefix path for signals'''
 		self.default_hierarchy = hierarchy
 
 
 	def add_sensitive(self, signal, hierarchy=None):
+		'''Add a signal to the sensitivity and watch lists'''
 		if not hierarchy:
 			hierarchy = self.default_hierarchy
 		self.sensitive.append(hierarchy + '.' + signal)
@@ -85,33 +93,31 @@ class VcdWatcher(object):
 
 
 	def add_watching(self, signal, hierarchy=None):
+		'''Register a signal to be watched'''
 		if not hierarchy:
 			hierarchy = self.default_hierarchy
 		self.watching.append(hierarchy + '.' + signal)
 
 
 	def get_sensitive_ids(self):
+		'''Parser access function for sensitivity list ids'''
 		return self._sensitive_ids.values()
 
 
 	def get_watching_ids(self):
+		'''Parser access function for watch list ids'''
 		return self._watching_ids.values()
 
 
 	def get_id(self, signal, hierarchy=None):
+		'''Look up the signal id from a signal name and optional path'''
 		if not hierarchy:
 			hierarchy = self.default_hierarchy
 		return self._watching_ids[hierarchy + '.' + signal]
 
 
 	def set_tracker(self, tracker):
+		'''Set the class type of a tracker object, used for the tracker creation'''
 		self.tracker = tracker
 
-
-class VcdTracker(object):
-
-	finished = False
-
-	def update(self, changes, vcd):
-		pass
 
