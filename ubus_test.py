@@ -42,7 +42,7 @@ class UbusWatcher(watcher.VcdWatcher):
 
 
 	def add_signals(self):
-		# Signals in the 'sensitivty list' are automatically added to the watch list
+		# Signals in the 'sensitivity list' are automatically added to the watch list
 		self.add_sensitive('sig_clock')
 		self.add_sensitive('sig_reset')
 		for signal in self.signals:
