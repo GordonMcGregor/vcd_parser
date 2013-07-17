@@ -78,7 +78,7 @@ class UbusTracker(tracker.VcdTracker):
 	def update(self, changes):
 		print '+', '-'*40, '+'
 		for change in changes:
-			print '\t', self.vcd.get_xmr(change), changes[change]
+			print '\t', self.parser.get_xmr(change), changes[change]
 
 
 

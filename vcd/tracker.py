@@ -36,8 +36,8 @@ class VcdTracker(object):
     '''A transaction tracker base class. Most of this will be very custom depending on the protocols'''
 
 
-    def __init__(self, vcd):
-        self.vcd = vcd
+    def __init__(self, parser):
+        self.parser = parser
         self.finished = False
 
 	def update(self, changes):

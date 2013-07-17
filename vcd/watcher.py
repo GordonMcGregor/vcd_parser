@@ -105,8 +105,8 @@ class VcdWatcher(object):
 		self.watching.append(hierarchy + '.' + signal)
 
 
-	def add_parser(self, vcd):
-		self.parser = vcd
+	def add_parser(self, parser):
+		self.parser = parser
 
 
 	def get_sensitive_ids(self):
