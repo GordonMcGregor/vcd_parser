@@ -35,11 +35,21 @@ finished their transaction recording.c
 class VcdTracker(object):
     '''A transaction tracker base class. Most of this will be very custom depending on the protocols'''
 
-
     def __init__(self, parser):
         self.parser = parser
         self.finished = False
 
-	def update(self, activity, values):
-		pass
+    def update(self, activity, values):
 
+        print '+', '-' * 80, '+'
+        print 'Triggered change'
+
+        for id in activity:
+            print '\t', self.parser.get_xmr(id), activity[id]
+
+
+        print '+', '-' * 80, '+'
+        print 'Previous values'
+
+        for id in values:
+            print '\t', self.parser.get_xmr(id), values[id]

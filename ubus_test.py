@@ -45,6 +45,7 @@ class UbusWatcher(watcher.VcdWatcher):
 		# Signals in the 'sensitivity list' are automatically added to the watch list
 		self.add_sensitive('sig_clock')
 		self.add_sensitive('sig_reset')
+
 		for signal in self.signals:
 			self.add_watching(signal)
 
@@ -53,17 +54,17 @@ class UbusWatcher(watcher.VcdWatcher):
 		# Called every time something in the 'sensitivity list' changes 
 		# Doing effective posedge/ negedge checks here and reset/ clock behaviour filtering
 
-		if self.get_active_2val('sig_reset'):
+		if self.get_id('sig_reset') in self.activity and self.get_active_2val('sig_reset'):
 			print 'in RESET'
 			self.in_reset = True
 			return
 
-		if not self.get_active_2val('sig_reset') and self.in_reset:
+		if  self.get_id('sig_reset') in self.activity and not self.get_active_2val('sig_reset') and self.in_reset:
 			print 'out of RESET'
 			self.in_reset = False
 
 		# Only update on rising clock edge (clock has changed and is 1)
-		if self.get_active_2val('sig_clock') and not self.in_reset:
+		if  self.get_id('sig_clock') in self.activity and self.get_active_2val('sig_clock') and not self.in_reset:
 			self.manage_trackers()
 
 
@@ -82,18 +83,8 @@ class UbusTracker(tracker.VcdTracker):
 		self.edge_count+=1
 		print '+', '-' * 80, '+'
 		print '+', '-'*29, 'clock posedge # %4d' % self.edge_count, '-'*29, '+'
-		print '+', '-' * 80, '+'
+		super(UbusTracker, self).update(activity, values)
 
-		print 'Triggering change'
-		for id in activity:
-			print '\t', self.parser.get_xmr(id), activity[id]
-
-
-		print '+', '-' * 80, '+'
-		print 'Previous values'
-
-		for id in values:
-			print '\t', self.parser.get_xmr(id), values[id]
 
 
 # Create a parser object, attach a watcher within the hierarchy and start running
