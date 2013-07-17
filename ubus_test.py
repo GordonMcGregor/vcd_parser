@@ -40,12 +40,14 @@ class UbusWatcher(watcher.VcdWatcher):
 		self.set_hierarchy(hierarchy)
 		self.add_signals()
 
+
 	def add_signals(self):
 		# Signals in the 'sensitivty list' are automatically added to the watch list
 		self.add_sensitive('sig_clock')
 		self.add_sensitive('sig_reset')
 		for signal in self.signals:
 			self.add_watching(signal)
+
 
 	def update(self):
 		# Called every time something in the 'sensitivity list' changes 
