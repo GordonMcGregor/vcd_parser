@@ -71,6 +71,7 @@ class VcdParser(object):
     self.debug = False
 
   def get_id(self, xmr):
+    '''Given a Cross Module Reference (XMR) find the associated VCD ID string'''
     search_path = xmr.split('.')
 
     for id in self.idcode2references:
@@ -90,11 +91,13 @@ class VcdParser(object):
 
 
   def show_nets(self):
+    '''Dump all the XMR/ hierarchical paths in the VCD file'''
     for id in self.idcode2references:
       print self.get_xmr(id)
 
 
   def get_xmr(self, id):
+    '''Given an ID, generate the hierarchical reference'''
     if id in self.xmr_cache:
       return self.xmr_cache[id]
 
@@ -105,23 +108,29 @@ class VcdParser(object):
 
 
   def scaler_value_change(self, value, id):
+    '''VCD file scalar value change detected, store for later'''
     self.changes[id] = value
 
 
   def vector_value_change(self, format, number, id):
+    '''VCD file vector value change detected, store for later'''
     self.changes[id] = (format, number)
 
 
   def register_watcher(self, watcher):
+    '''Add a watcher to the list, for evaluation at each time change'''
     watcher.add_parser(self)
     self.watchers.append(watcher)
 
 
   def deregister_watcher(self, watcher):
+    '''Remove a watcher from the list'''
     self.watchers.remove(watcher)
 
 
   def update_time(self, next_time):
+    '''Reached an update point in time in the VCD - use the collected changes
+     and update any watchers that are sensitive to a signal that has changed'''
     current_time = self.now
 
     if self.debug: 
@@ -148,6 +157,7 @@ class VcdParser(object):
 
 
   def parse(self, file_handle):
+    '''Wrapper around the main extract routine - catch errors (mainly unknown XMRs or signals)'''
     try:
       self.extract(file_handle)
     except ValueError as e:
@@ -156,6 +166,7 @@ class VcdParser(object):
 
 
   def extract(self, fh):
+    '''Tokenize and parse the VCD file'''
     # open the VCD file and create a token generator
     tokeniser = (word for line in fh for word in line.split() if word)
 
