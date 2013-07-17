@@ -44,39 +44,45 @@ class VcdWatcher(object):
 	_watching_ids = []
 
 	tracker = None
+	parser = None
 
-	def update(self, changes, vcd):
+	def pre_update(self, changes):
+		'''Manage internal data updates prior to calling the expected to be overridden update method'''
+		self.changes = changes
+		self.update()
+
+	def update(self):
 		'''Override update to only check on rising/ falling edges etc, prior to calling manage trackers'''
-		self.manage_trackers(changes, vcd)
+		self.manage_trackers()
 
 
-	def manage_trackers(self, changes, vcd):
+	def manage_trackers(self):
 		'''Start new trackers, update existing trackers and clean up finished tracker objects'''
-		if self.start_tracker(changes, vcd):
-			self.trackers.append(self.create_new_tracker(changes, vcd))
+		if self.start_tracker():
+			self.trackers.append(self.create_new_tracker())
 
 		for tracker in self.trackers:
-			tracker.update(changes, vcd)
+			tracker.update(self.changes)
 
 		for tracker in self.trackers:
 			if tracker.finished:
 				self.trackers.remove(tracker)
 
 
-	def start_tracker(self, changes, vcd):
+	def start_tracker(self):
 		'''Override start_tracker to identify start of transaction conditions'''
 		return False
 
 
-	def create_new_tracker(self, changes, vcd):
+	def create_new_tracker(self):
 		'''Build an instance of the pre-defined transaction tracker objects'''
-		return self.tracker()
+		return self.tracker(self.parser)
 
 
-	def update_ids(self, vcd):
+	def update_ids(self):
 		'''Callback after VCD header is parsed, to extract signal ids'''
-		self._sensitive_ids = {xmr : vcd.get_id(xmr) for xmr in self.sensitive}
-		self._watching_ids = {xmr : vcd.get_id(xmr) for xmr in self.watching}
+		self._sensitive_ids = {xmr : self.parser.get_id(xmr) for xmr in self.sensitive}
+		self._watching_ids = {xmr : self.parser.get_id(xmr) for xmr in self.watching}
 
 
 	def set_hierarchy(self, hierarchy):
@@ -99,6 +105,10 @@ class VcdWatcher(object):
 		self.watching.append(hierarchy + '.' + signal)
 
 
+	def add_parser(self, vcd):
+		self.parser = vcd
+
+
 	def get_sensitive_ids(self):
 		'''Parser access function for sensitivity list ids'''
 		return self._sensitive_ids.values()
@@ -114,6 +124,13 @@ class VcdWatcher(object):
 		if not hierarchy:
 			hierarchy = self.default_hierarchy
 		return self._watching_ids[hierarchy + '.' + signal]
+
+
+	def get2val(self, signal):
+		id = self.get_id(signal)
+		if id in self.changes:
+			value = self.changes[id]
+			return eval(value)
 
 
 	def set_tracker(self, tracker):

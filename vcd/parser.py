@@ -113,6 +113,7 @@ class VcdParser(object):
 
 
   def register_watcher(self, watcher):
+    watcher.add_parser(self)
     self.watchers.append(watcher)
 
 
@@ -140,7 +141,7 @@ class VcdParser(object):
           if signal in self.changes:
             collected_changes[signal] = self.changes[signal]
 
-        watcher.update(collected_changes, self)
+        watcher.pre_update(collected_changes)
 
     self.changes = {}
     self.now = next_time
@@ -196,7 +197,7 @@ class VcdParser(object):
     self.drop_declaration(tokeniser, keyword)
     
     for watcher in self.watchers:
-      watcher.update_ids(self)
+      watcher.update_ids()
     
 
   def vcd_scope(self, tokeniser, keyword):

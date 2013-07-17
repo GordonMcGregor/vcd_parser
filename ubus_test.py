@@ -47,27 +47,25 @@ class UbusWatcher(watcher.VcdWatcher):
 		for signal in self.signals:
 			self.add_watching(signal)
 
-	def update(self, changes, vcd):
+	def update(self):
 		# Called every time something in the 'sensitivity list' changes 
 		# Doing effective posedge/ negedge checks here and reset/ clock behaviour filtering
-		clock_id = self.get_id('sig_clock')
-		reset_id = self.get_id('sig_reset')
 
-		if reset_id in changes and changes[reset_id] == '1':
+		if self.get2val('sig_reset'):
 			print 'in RESET'
 			self.in_reset = True
 			return
 
-		if reset_id in changes and changes[reset_id] == '0':
+		if not self.get2val('sig_reset') and self.in_reset:
 			print 'out of RESET'
 			self.in_reset = False
 
 		# Only update on rising clock edge (clock has changed and is 1)
-		if clock_id in changes and changes[clock_id] == '1' and not self.in_reset:
-			self.manage_trackers(changes, vcd)
+		if self.get2val('sig_clock') and not self.in_reset:
+			self.manage_trackers()
 
 
-	def start_tracker(self, changes, vcd):
+	def start_tracker(self):
 		# Simple example - if we don't have a tracker, add one first time it is called
 		if not len(self.trackers):
 			return True
@@ -75,10 +73,10 @@ class UbusWatcher(watcher.VcdWatcher):
 
 class UbusTracker(tracker.VcdTracker):
 
-	def update(self, changes, vcd):
+	def update(self, changes):
 		print '+', '-'*40, '+'
 		for change in changes:
-			print '\t', vcd.get_xmr(change), changes[change]
+			print '\t', self.vcd.get_xmr(change), changes[change]
 
 
 
