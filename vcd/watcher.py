@@ -127,9 +127,12 @@ class VcdWatcher(object):
 
 
 	def get2val(self, signal):
+		'''Attempt to convert a scalar to a numerical 0/1 value'''
 		id = self.get_id(signal)
 		if id in self.changes:
 			value = self.changes[id]
+			if value in "xXzZ":
+				raise ValueError
 			return eval(value)
 
 
