@@ -20,8 +20,8 @@
   example shipped with the UVM BCL
 
   This example can be extended to provide interleaved transaction recording, using
-  VcdWatchers, or just use the existing watcher below to filter/ analyse a subset
-  of signals within the VCD dump
+  UbusTrackers that exist for a transaction lifetime, or just extend the simple tracker 
+  below to filter/ analyse a subset of signals within the VCD dump
 
 '''
 
